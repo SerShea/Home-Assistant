@@ -1,0 +1,65 @@
+
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# Shea's stuff here:
+
+logger:
+  default: info
+  logs:  
+    homeassistant.components.zha: debug
+    zigpy: debug
+
+zha:
+  zigpy_config:
+    ota:
+      otau_directory: /config/zigpy_ota
+      ikea_provider: true
+      ledvance_provider: true
+
+sensor:
+  - platform: mqtt
+    state_topic: '/location/ibeacon_00'
+    name: "rs00"
+    value_template: "{{ value_json.distance }}"
+  - platform: mqtt
+    state_topic: '/location/ibeacon_01'
+    name: "rs01"
+    value_template: "{{ value_json.distance }}"
+  - platform: mqtt
+    state_topic: '/location/ibeacon_02'
+    name: "rs02"
+    value_template: "{{ value_json.distance }}"
+  - platform: mqtt
+    state_topic: '/location/ibeacon_03'
+    name: "rs03"
+    value_template: "{{ value_json.distance }}"
+    
+  - platform: template
+    sensors:
+      room_sense:
+        friendly_name: "Shea's Presence"
+        icon_template: "mdi:cellphone"
+        value_template: >-
+          {% if (states.person.sershea.state) != 'home' %}
+            Away
+          {% elif states.sensor.rs00.state|float < states.sensor.rs01.state|float and states.sensor.rs00.state|float < states.sensor.rs02.state|float and states.sensor.rs00.state|float < states.sensor.rs03.state|float %}
+            Office
+          {% elif states.sensor.rs01.state|float < states.sensor.rs00.state|float and states.sensor.rs01.state|float < states.sensor.rs02.state|float and states.sensor.rs01.state|float < states.sensor.rs03.state|float %}
+            Bedroom
+          {% elif states.sensor.rs02.state|float < states.sensor.rs00.state|float and states.sensor.rs02.state|float < states.sensor.rs01.state|float and states.sensor.rs02.state|float < states.sensor.rs03.state|float %}
+            Living Room
+          {% elif states.sensor.rs03.state|float < states.sensor.rs00.state|float and states.sensor.rs03.state|float < states.sensor.rs01.state|float and states.sensor.rs03.state|float < states.sensor.rs02.state|float %}
+            Kitchen
+          {% else %}
+            ???
+          {% endif %}
